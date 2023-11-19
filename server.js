@@ -61,6 +61,12 @@ app.use('/api/authors', require('./routes/authors'));
 // Calling Categories API from routes/categories.js
 app.use('/api/categories', require('./routes/categories'));
 
+
+if (req.path === "/favicon.ico") {
+    // Skip token verification for favicon requests
+    return next();
+  }
+
 // To run localhost
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);

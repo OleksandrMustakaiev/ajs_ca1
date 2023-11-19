@@ -65,6 +65,3 @@ app.use('/api/categories', require('./routes/categories'));
 app.listen(port, () => {
     console.log(`Example app listening on port ${port}`);
 });
-
-// Export the Express API
-module.exports = server;

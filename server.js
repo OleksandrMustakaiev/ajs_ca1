@@ -1,7 +1,8 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const app = express();
-const port = 3000;
+// const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Import dotenv - to make .env work
 require('dotenv').config();
@@ -59,7 +60,6 @@ app.use('/api/tracks', require('./routes/tracks'));
 app.use('/api/authors', require('./routes/authors'));
 // Calling Categories API from routes/categories.js
 app.use('/api/categories', require('./routes/categories'));
-
 
 // To run localhost
 app.listen(port, () => {

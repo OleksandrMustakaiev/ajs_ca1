@@ -5,7 +5,7 @@ const Category = require('../models/category.model');
 // GET ALL
 const readData = (req, res) => {
 
-    Category.find({})
+    Category.find({}).populate('tracks','-categories')
         .then((data) => {
             console.log(data);
             if(data.length > 0){
@@ -26,7 +26,7 @@ const readOne = (req, res) => {
 
     let id = req.params.id;
 
-    Category.findById(id)
+    Category.findById(id).populate('tracks','-categories')
         .then(data => {
             if(!data){
                 res.status(404).json({ msg: `Category with ID: ${id} - Not Found!`});

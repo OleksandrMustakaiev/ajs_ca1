@@ -62,10 +62,6 @@ app.use('/api/authors', require('./routes/authors'));
 app.use('/api/categories', require('./routes/categories'));
 
 
-if (req.path === "/favicon.ico") {
-    // Skip token verification for favicon requests
-    return next();
-  }
 
 // To run localhost
 app.listen(port, () => {

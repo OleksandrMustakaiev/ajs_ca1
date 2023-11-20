@@ -7,7 +7,12 @@ const categorySchema = new Schema({
     },
     image_path: {
         type: String
-    }
+    },
+    // many to many (Tracks)
+    tracks: [{
+        type: Schema.Types.ObjectId, 
+        ref: 'Track' 
+    }]
 
 }, {timestamps: true});
 

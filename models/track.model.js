@@ -22,6 +22,11 @@ const trackSchema = new Schema({
     authors: [{
         type: Schema.Types.ObjectId, 
         ref: 'Author' 
+    }],
+    // many to many (Category)
+    categories: [{
+        type: Schema.Types.ObjectId, 
+        ref: 'Category' 
     }]
 
 }, {timestamps: true});

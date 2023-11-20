@@ -98,7 +98,7 @@ const readOne = (req, res) => {
 
     let id = req.params.id;
 
-    Author.findById(id)
+    Author.findById(id).populate('tracks','-authors')
         .then(data => {
             if(!data){
                 res.status(404).json({ msg: `Author with ID: ${id} - Not Found!`});

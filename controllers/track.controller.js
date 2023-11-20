@@ -26,28 +26,34 @@ const log = data => console.log(JSON.stringify(data,undefined,2))
       name => new Author({ name })
     );
 
+    let [rap, hiphop] = ['rap', 'hip-hop'].map(
+        name => new Category({ name })
+    );
+
     // Add tracks to authors
     [drake, travis_scott].forEach( author => {
         author.items.push(musicdrake);   // add drake to musicdrake
         musicdrake.stores.push(author);  // add musicdrake to drake
     });
 
+    // Add tracks to category
+    [rap, hiphop].forEach( category => {
+        category.items.push(musicdrake);   // add rap to musicdrake
+        musicdrake.stores.push(category);  // add musicdrake to rap
+    });
+
     
     drake.items.push(musictravis);
     musictravis.stores.push(drake);
 
+    rap.items.push(musictravis);
+    musictravis.stores.push(rap);
+
     // Save everything
     await Promise.all(
-      [drake, travis_scott, musictravis, musicdrake].map( m => m.save() )
+      [drake, travis_scott, musictravis, musicdrake, rap, hiphop].map( m => m.save() )
     );
 
-    // // Show authors
-    // let authors = await Author.find().populate('tracks','-authors');
-    // log(authors);
-
-    // // Show items
-    // let tracks = await Track.find().populate('authors','-tracks');
-    // log(tracks);
 
   } catch(e) {
     console.error(e);
@@ -76,7 +82,7 @@ const deleteImage = (filename) => {
 // GET ALL
 const readData = (req, res) => {
 
-    Track.find({}).populate('user').populate('authors','-tracks')
+    Track.find({}).populate('user').populate('authors','-tracks').populate('categories', '-tracks')
         .then((data) => {
             console.log(data);
             if(data.length > 0){
@@ -97,7 +103,7 @@ const readOne = (req, res) => {
 
     let id = req.params.id;
 
-    Track.findById(id)
+    Track.findById(id).populate('user').populate('authors','-tracks').populate('categories', '-tracks')
         .then(data => {
             if(!data){
                 res.status(404).json({ msg: `Track with ID: ${id} - Not Found!`});

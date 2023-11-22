@@ -7,7 +7,7 @@ const port = 3000;
 // Import dotenv - to make .env work
 require('dotenv').config();
 // Import DB - "init" function
-require('./configs/db.js')();
+require('../configs/db.js')();
 
 // Tell express to make respond as json file not text/html
 app.use(express.json());
@@ -53,13 +53,13 @@ app.use((req, res, next) => {
 });
 
 // Calling Users API from routes/users.js
-app.use('/api/users', require('./routes/users'));
+app.use('/api/users', require('../routes/users.js'));
 // Calling Tracks API from routes/tracks.js
-app.use('/api/tracks', require('./routes/tracks'));
+app.use('/api/tracks', require('../routes/tracks'));
 // Calling Authors API from routes/authors.js
-app.use('/api/authors', require('./routes/authors'));
+app.use('/api/authors', require('../routes/authors'));
 // Calling Categories API from routes/categories.js
-app.use('/api/categories', require('./routes/categories'));
+app.use('/api/categories', require('../routes/categories'));
 
 
 

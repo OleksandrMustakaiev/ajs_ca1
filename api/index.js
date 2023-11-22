@@ -21,6 +21,11 @@ app.use(express.static(__dirname + '/public/'));
 // Custom middleware
 app.use((req, res, next) => {
 
+    if (req.path === "/favicon.ico") {
+        // Skip token verification for favicon requests
+        return next();
+      }
+
     console.log(req.headers);
     let token = null;
 
@@ -61,6 +66,7 @@ app.use('/api/authors', require('../routes/authors'));
 // Calling Categories API from routes/categories.js
 app.use('/api/categories', require('../routes/categories'));
 
+app.get('/', (req, res) => {res.send('Music API')})
 
 
 // To run localhost

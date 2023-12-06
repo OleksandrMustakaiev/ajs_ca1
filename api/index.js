@@ -2,12 +2,14 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const app = express();
 const port = 3000;
-// const port = process.env.PORT || 3000;
+const cors = require('cors');
 
 // Import dotenv - to make .env work
 require('dotenv').config();
 // Import DB - "init" function
 require('../configs/db.js')();
+
+app.use(cors());
 
 // Tell express to make respond as json file not text/html
 app.use(express.json());

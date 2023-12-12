@@ -63,8 +63,30 @@ const log = data => console.log(JSON.stringify(data,undefined,2))
 
 })();
 
-const deleteImage = (filename) => {
-    let path = `public/uploads/tracks/${filename}`;
+const deleteImage = async (filename) => {
+    if(process.env.STORAGE_ENGINE === 'S3'){
+        const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+        const s3 = new S3Client({
+            region: process.env.MY_AWS_REGION,
+            credentials: {
+                accessKeyId: process.env.MY_AWS_ACCESS_KEY_ID,
+                secretAccessKey: process.env.MY_AWS_SECRET_ACCESS_KEY
+            }
+        });
+
+        try{
+            const data = await s3.send(new DeleteObjectCommand({
+                Bucket: process.env.MY_AWS_BUCKET,
+                Key: filename
+            }));
+            console.log('Image deleted successfully', data);
+        }
+        catch(err){
+            console.error(err);
+        }
+    }
+    else{
+        let path = `public/uploads/${filename}`;
 
     fs.access(path, fs.constants.F_OK, (err) => {
        if(err) {
@@ -77,6 +99,7 @@ const deleteImage = (filename) => {
             console.log(`${filename} was deleted!`);
        });
     });
+    }
 } 
 
 // GET ALL
@@ -105,18 +128,24 @@ const readOne = (req, res) => {
 
     Track.findById(id).populate('user').populate('authors','-tracks').populate('categories', '-tracks')
         .then(data => {
-            if(!data){
-                res.status(404).json({ msg: `Track with ID: ${id} - Not Found!`});
-            } else {
+            if(data){
+                let img = `${process.env.STATIC_FILES_URL}${data.image_path}`;
                 res.status(200).json(data);
+            }
+            else {
+                res.status(404).json({
+                    "message": `Track with id: ${id} not found`
+                });
             }
         })
         .catch(err => {
-            if(err.name === 'CastError'){
-                res.status(404).json({ msg : `Track with ID: ${id} - Not Found!`})
-            } else {
-                console.error(err);
-                res.status(500).json(err);
+            if(err.name === 'CastError') {
+                res.status(400).json({
+                    "message": `Bad request, ${id} is not a valid id`
+                });
+            }
+            else {
+                res.status(500).json(err)
             }
         });
 };
@@ -127,12 +156,8 @@ const createData = (req, res) => {
     console.log(req.body);
     let inputData = req.body;
 
-    if(!req.user.admin){
-        inputData.user = req.user._id;
-    }
-
     if(req.file){
-        inputData.image_path = req.file.filename
+        inputData.image_path = process.env.STORAGE_ENGINE === 'S3' ? req.file.key : req.file.filename
     }
     // include the following else if image is required
     else{
@@ -148,8 +173,13 @@ const createData = (req, res) => {
         })
         .catch(err => {
             if(err.name === 'ValidationError'){
-                res.status(422).json(err);
-            } else {
+                console.error('Validation Error!!', err);
+                res.status(422).json({
+                    "msg": "Validation Error",
+                    "error" : err.message 
+                });
+            }
+            else {
                 console.error(err);
                 res.status(500).json(err);
             }
@@ -187,11 +217,18 @@ const updateData = (req, res) => {
         })
     .catch(err => {
         if(err.name === 'ValidationError'){
-            res.status(422).json(err);
-        } else if(err.name === 'CastError'){
-            res.status(404).json({ msg : `Track with ID: ${id} - Not Found!`})
+            console.error('Validation Error!!', err);
+            res.status(422).json({
+                "msg": "Validation Error",
+                "error" : err.message 
+            });
         }
-         else {
+        else if(err.name === 'CastError') {
+            res.status(400).json({
+                "message": `Bad request, ${id} is not a valid id`
+            });
+        }
+        else {
             console.error(err);
             res.status(500).json(err);
         }

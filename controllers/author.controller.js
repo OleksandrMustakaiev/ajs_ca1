@@ -1,32 +1,23 @@
 // Import Model
 const Author = require('../models/author.model');
-
 const fs = require('fs');
+
 // Function to delete image
-
 const log = data => console.log(JSON.stringify(data,undefined,2))
-
 (async function() {
-
   try {
-
     const conn = await mongoose.connect(uri,options);
-
     // Clean data
     await Promise.all(
       Object.entries(conn.models).map(([k,m]) => m.deleteMany() )
     );
-
-
     // Create some instances
     let [musicdrake, musictravis] = ['musicdrake','musictravis'].map(
       name => new Track({ title })
     );
-
     let [drake, travis_scott] = ['Drake', 'Travis Scott'].map(
       name => new Author({ name })
     );
-
     // Add tracks to authors
     [drake, travis_scott].forEach( author => {
         author.items.push(musicdrake);   // add drake to musicdrake
@@ -58,8 +49,30 @@ const log = data => console.log(JSON.stringify(data,undefined,2))
 
 })();
 
-const deleteImage = (filename) => {
-    let path = `public/uploads/authors/${filename}`;
+const deleteImage = async (filename) => {
+    if(process.env.STORAGE_ENGINE === 'S3'){
+        const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+        const s3 = new S3Client({
+            region: process.env.MY_AWS_REGION,
+            credentials: {
+                accessKeyId: process.env.MY_AWS_ACCESS_KEY_ID,
+                secretAccessKey: process.env.MY_AWS_SECRET_ACCESS_KEY
+            }
+        });
+
+        try{
+            const data = await s3.send(new DeleteObjectCommand({
+                Bucket: process.env.MY_AWS_BUCKET,
+                Key: filename
+            }));
+            console.log('Image deleted successfully', data);
+        }
+        catch(err){
+            console.error(err);
+        }
+    }
+    else{
+        let path = `public/uploads/${filename}`;
 
     fs.access(path, fs.constants.F_OK, (err) => {
        if(err) {
@@ -70,8 +83,9 @@ const deleteImage = (filename) => {
        fs.unlink(path, (err) => {
             if(err) throw err;
             console.log(`${filename} was deleted!`);
-        });
+       });
     });
+    }
 } 
 
 // GET ALL
@@ -100,18 +114,24 @@ const readOne = (req, res) => {
 
     Author.findById(id).populate('tracks','-authors')
         .then(data => {
-            if(!data){
-                res.status(404).json({ msg: `Author with ID: ${id} - Not Found!`});
-            } else {
+            if(data){
+                let img = `${process.env.STATIC_FILES_URL}${data.image_path}`;
                 res.status(200).json(data);
+            }
+            else {
+                res.status(404).json({
+                    "message": `Author with id: ${id} not found`
+                });
             }
         })
         .catch(err => {
-            if(err.name === 'CastError'){
-                res.status(404).json({ msg : `Author with ID: ${id} - Not Found!`})
-            } else {
-                console.error(err);
-                res.status(500).json(err);
+            if(err.name === 'CastError') {
+                res.status(400).json({
+                    "message": `Bad request, ${id} is not a valid id`
+                });
+            }
+            else {
+                res.status(500).json(err)
             }
         });
 };
@@ -123,7 +143,7 @@ const createData = (req, res) => {
     let inputData = req.body;
     
     if(req.file){
-        inputData.image_path = req.file.filename
+        inputData.image_path = process.env.STORAGE_ENGINE === 'S3' ? req.file.key : req.file.filename
     }
     // include the following else if image is required
     else{
@@ -139,8 +159,13 @@ const createData = (req, res) => {
         })
         .catch(err => {
             if(err.name === 'ValidationError'){
-                res.status(422).json(err);
-            } else {
+                console.error('Validation Error!!', err);
+                res.status(422).json({
+                    "msg": "Validation Error",
+                    "error" : err.message 
+                });
+            }
+            else {
                 console.error(err);
                 res.status(500).json(err);
             }
@@ -178,11 +203,18 @@ const updateData = (req, res) => {
     })
     .catch(err => {
         if(err.name === 'ValidationError'){
-            res.status(422).json(err);
-        } else if(err.name === 'CastError'){
-            res.status(404).json({ msg : `Author with ID: ${id} - Not Found!`})
+            console.error('Validation Error!!', err);
+            res.status(422).json({
+                "msg": "Validation Error",
+                "error" : err.message 
+            });
         }
-         else {
+        else if(err.name === 'CastError') {
+            res.status(400).json({
+                "message": `Bad request, ${id} is not a valid id`
+            });
+        }
+        else {
             console.error(err);
             res.status(500).json(err);
         }

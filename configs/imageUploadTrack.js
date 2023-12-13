@@ -27,17 +27,17 @@ if(process.env.STORAGE_ENGINE === 'S3'){
          }
     });
 }
-else {
-    storage = multer.diskStorage({
-        destination: function(req, file, cb){
-            cb(null, 'public/uploads/tracks');
-        },
-        filename: function(req, file, cb){
-           cb(null, Date.now() + path.extname(file.originalname)); 
-        }
-    });
+// else {
+//     storage = multer.diskStorage({
+//         destination: function(req, file, cb){
+//             cb(null, 'public/uploads/tracks');
+//         },
+//         filename: function(req, file, cb){
+//            cb(null, Date.now() + path.extname(file.originalname)); 
+//         }
+//     });
     
-}
+// }
 
 
 // express middleware
